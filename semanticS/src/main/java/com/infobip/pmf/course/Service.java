@@ -46,8 +46,8 @@ public class Service {
 
         // core version is the same
 
-        if (v1.pre != null && v1.pre == null) return -1;
-        if (v1.pre == null && v1.pre != null) return 1;
+        if (v1.pre != null && v2.pre == null) return -1;
+        if (v1.pre == null && v2.pre != null) return 1;
 
         // they are both prerelease -> compare lex
 
