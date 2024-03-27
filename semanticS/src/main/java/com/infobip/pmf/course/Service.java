@@ -1,7 +1,6 @@
 package com.infobip.pmf.course;
 
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,6 +10,9 @@ import java.util.Map;
 public class Service {
 
     Map<String, String> params;
+    SemVerValidator validator = new SemVerValidator();
+    SemVerValidator validator2 = new SemVerValidator();
+    String message;
 
     @GetMapping("/versions/max")
     public String processMax(
@@ -18,9 +20,40 @@ public class Service {
     ) {
 
         this.params = params;
-        checkParamNames_max();
+        if(!checkParamNames_max()) return "Bad input! Check parameter names. :(";
 
-        return params.toString();
+        String v1 = params.get("v1");
+        String v2 = params.get("v2");
+        if (!checkForm(v1, validator)) return "Invalid SemVer expression: " + message;
+        if (!checkForm(v2, validator2)) return "Invalid SemVer expression: " + message;
+
+        // compares values fetched by validators
+        int cmp = compareSemVers(validator, validator2);
+
+        return "" + cmp;
+    }
+
+    private int compareSemVers(SemVerValidator v1, SemVerValidator v2) {
+
+        if (v1.major.compareTo(v2.major) < 0) return -1;
+        if (v1.major.compareTo(v2.major) > 0) return 1;
+
+        if (v1.minor.compareTo(v2.minor) < 0) return -1;
+        if (v1.minor.compareTo(v2.minor) > 0) return 1;
+
+        if (v1.patch.compareTo(v2.patch) < 0) return -1;
+        if (v1.patch.compareTo(v2.patch) > 0) return 1;
+
+        // core version is the same
+
+        if (v1.pre != null && v1.pre == null) return -1;
+        if (v1.pre == null && v1.pre != null) return 1;
+
+        // they are both prerelease -> compare lex
+
+        // todo
+
+        return 0;
     }
 
     /**
@@ -29,7 +62,7 @@ public class Service {
      */
     private boolean checkParamNames_max() {
 
-        return true;
+        return params.size() == 2 && params.get("v1") != null && params.get("v2") != null;
     }
 
     @GetMapping("/versions/next")
@@ -37,9 +70,32 @@ public class Service {
             @RequestParam Map<String,String> params
     ) {
 
-        checkParamNames_next();
+        this.params = params;
+        if (!checkParamNames_next()) return "Bad input! Check parameter names. :(";
 
-        return params.toString();
+        String type = params.get("type");
+        String v = params.get("v");
+        if (!checkForm(v, validator)) return "Invalid SemVer expression: " + message;
+
+        switch (type) {
+            case "MAJOR" -> {
+                validator.major = "" + (Integer.parseInt(validator.major) + 1);
+            }
+            case "MINOR" -> {
+                validator.minor = "" + (Integer.parseInt(validator.minor) + 1);
+            }
+            case "PATCH" -> {
+                validator.patch = "" + (Integer.parseInt(validator.patch) + 1);
+            }
+        }
+
+        return validator.major + '.' + validator.minor + '.' + validator.patch;
+    }
+
+    private boolean checkForm(String v, SemVerValidator validator) {
+
+        message = validator.validate(v);
+        return message == null;
     }
 
     /**
@@ -48,6 +104,6 @@ public class Service {
      */
     private boolean checkParamNames_next() {
 
-        return true;
+        return params.size() == 2 && params.get("v") != null && params.get("type") != null;
     }
 }
