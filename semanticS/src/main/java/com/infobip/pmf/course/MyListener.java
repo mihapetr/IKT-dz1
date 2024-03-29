@@ -31,10 +31,10 @@ public class MyListener extends SemVerBaseListener {
     }
 
     @Override
-    public void enterPre_release(SemVerParser.Pre_releaseContext ctx) {
+    public void enterPre_release_id(SemVerParser.Pre_release_idContext ctx) {
         String value = ctx.getText();
         //System.out.println("Pre: " + value);
-        validator.pre = value;
+        validator.pre.add(value);
     }
 
     @Override
